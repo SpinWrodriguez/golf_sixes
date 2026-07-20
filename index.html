@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Sixes</title>
+<meta name="theme-color" content="#3a414a" />
+<style>
+  :root {
+    --bg: #e9ebee;
+    --card: #FFFFFF;
+    --ink: #3a414a;
+    --muted: #8a9099;
+    --line: #dcdfe4;
+    --banner: #85a7c9;
+    --accent: #6b80d8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 440px; margin: 0 auto; padding: 12px 12px 56px; }
+
+  /* ---- black stat bar ---- */
+  .topbar {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 14px;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .topbar .stat { text-align: center; flex: 1; }
+  .topbar .cap { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #cfd3d8; }
+  .topbar .val { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .nav-box {
+    border: 1.5px solid rgba(255,255,255,0.55); border-radius: 10px; background: none; color: #fff;
+    font-size: 18px; font-weight: 700; font-family: inherit; cursor: pointer;
+    width: 56px; margin: 2px 0;
+  }
+  .nav-box:disabled { opacity: 0.25; cursor: default; }
+
+  /* ---- player cards ---- */
+  .pcard {
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(58,65,74,0.08);
+  }
+  .pbanner {
+    background: var(--banner);
+    padding: 9px 12px;
+  }
+  .pbanner input {
+    width: 100%;
+    background: none; border: none; outline: none;
+    color: #fff; font-family: inherit;
+    font-size: 16px; font-weight: 600; text-align: center;
+  }
+  .pbanner input::placeholder { color: rgba(255,255,255,0.75); }
+  .pbody { padding: 14px 14px 12px; }
+  .stepper {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .big-btn {
+    width: 76px; height: 52px;
+    background: #fff; border: 1.5px solid #b9bfc7; border-radius: 10px;
+    font-size: 30px; font-weight: 700; color: var(--ink);
+    font-family: inherit; cursor: pointer; line-height: 1;
+  }
+  .big-btn:active { background: var(--ink); color: #fff; }
+  .big-num-wrap { text-align: center; }
+  .big-num {
+    font-size: 44px; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .big-num.empty { color: #c2c7cd; }
+  .big-cap { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .statrow {
+    display: flex; gap: 10px; justify-content: center;
+    margin-top: 12px;
+  }
+  .statbox { text-align: center; }
+  .statbox .cap {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink); margin-bottom: 3px;
+  }
+  .statbox .box {
+    min-width: 52px; height: 42px; padding: 0 8px;
+    border: 1.5px solid var(--line); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums;
+    background: #fff; color: var(--ink);
+  }
+  .statbox .box.filled {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .statbox .box.dim { color: #c2c7cd; }
+
+  /* ---- shared card ---- */
+  .card {
+    background: var(--card); border-radius: 14px; padding: 14px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(58,65,74,0.08);
+  }
+  .card .head {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .entry-foot { display: flex; justify-content: space-between; align-items: center; margin: 2px 2px 12px; }
+  .link-btn { background: none; border: none; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: underline; cursor: pointer; font-family: inherit; padding: 4px 0; }
+  .status-ok { font-size: 12px; font-weight: 600; color: var(--accent); }
+  .status-wait { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+  /* ---- standings ---- */
+  .stand-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stand-cell {
+    border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 10px 4px; text-align: center; background: #fff;
+  }
+  .stand-cell.leader { border-color: var(--accent); border-width: 2px; }
+  .stand-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stand-pts { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .stand-sub { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--bg); margin-bottom: 12px; }
+  .bar > div { transition: width 300ms ease; }
+
+  /* ---- scorecard table ---- */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { font-weight: 700; padding: 4px; font-size: 12px; }
+  th.hole-col { text-align: left; font-weight: 600; color: var(--muted); }
+  td { padding: 7px 4px; text-align: center; font-weight: 600; }
+  td.hole-col { text-align: left; font-weight: 700; }
+  tbody tr.hole-row { border-top: 1px solid #eceef0; cursor: pointer; }
+  tbody tr.hole-row.current { background: #eef1f5; }
+  tr.subtotal { background: #eceef0; font-weight: 700; }
+  tr.grand { background: var(--ink); color: #fff; font-weight: 700; }
+  .empty-mark { color: #dcdfe4; }
+  td b { font-weight: 700; }
+
+  .foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 8px; }
+  .rules { font-size: 11px; line-height: 1.6; color: var(--muted); }
+  .reset-btn {
+    background: #fff; border: 1.5px solid #b9bfc7; color: var(--ink);
+    border-radius: 10px; padding: 9px 12px; font-size: 12px; font-weight: 600;
+    font-family: inherit; cursor: pointer; flex-shrink: 0;
+  }
+  .reset-confirm { background: var(--ink); color: #fff; }
+  .saved-note { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 10px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- black stat bar / hole navigation -->
+  <div class="topbar">
+    <button class="nav-box" id="prevBtn" aria-label="Previous hole">‹</button>
+    <div class="stat">
+      <div class="cap">Scored</div>
+      <div class="val" id="playedVal">0</div>
+    </div>
+    <div class="stat">
+      <div class="cap">Hole</div>
+      <div class="val" id="holeVal">1</div>
+    </div>
+    <div class="stat">
+      <div class="cap">Leader</div>
+      <div class="val" id="leaderVal">–</div>
+    </div>
+    <button class="nav-box" id="nextBtn" aria-label="Next hole">›</button>
+  </div>
+
+  <!-- player entry cards -->
+  <div id="playerCards"></div>
+
+  <div class="entry-foot">
+    <button class="link-btn" id="clearHoleBtn">Clear this hole</button>
+    <span id="holeStatus" class="status-wait"></span>
+  </div>
+
+  <!-- standings -->
+  <section class="card">
+    <div class="head">Sixes standings</div>
+    <div class="bar" id="bar" style="display:none"></div>
+    <div class="stand-grid" id="standGrid"></div>
+  </section>
+
+  <!-- scorecard -->
+  <section class="card" style="overflow-x:auto">
+    <div class="head">Card · stableford (sixes)</div>
+    <table>
+      <thead><tr id="cardHead"></tr></thead>
+      <tbody id="cardBody"></tbody>
+    </table>
+  </section>
+
+  <div class="foot">
+    <p class="rules">Best Stableford score wins the hole. Split: outright 4–2–0 · two tie for best 3–3–0 · two tie for worst 4–1–1 · all tie 2–2–2.</p>
+    <span id="resetArea"></span>
+  </div>
+  <p class="saved-note">Your round is saved on this device automatically.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "sixes-round-v1";
+
+  function freshState() {
+    var stb = [];
+    for (var i = 0; i < 18; i++) stb.push([null, null, null]);
+    return { names: ["", "", ""], stb: stb, hole: 0 };
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return freshState();
+      var s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.stb) || s.stb.length !== 18) return freshState();
+      return s;
+    } catch (e) { return freshState(); }
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var state = load();
+  var confirmingReset = false;
+
+  // Sixes allocation from Stableford points (higher is better)
+  function sixesFromStableford(row) {
+    if (row[0] == null || row[1] == null || row[2] == null) return [null, null, null];
+    var sorted = row.slice().sort(function (a, b) { return b - a; });
+    var best = sorted[0], mid = sorted[1], worst = sorted[2];
+    if (best === mid && mid === worst) return [2, 2, 2];
+    if (best === mid) return row.map(function (s) { return s === best ? 3 : 0; });
+    if (mid === worst) return row.map(function (s) { return s === best ? 4 : 1; });
+    return row.map(function (s) { return s === best ? 4 : (s === mid ? 2 : 0); });
+  }
+
+  function computeTotals() {
+    var sixes = [0, 0, 0], stab = [0, 0, 0], front = [0, 0, 0], back = [0, 0, 0];
+    var byHole = [];
+    var played = 0;
+    for (var h = 0; h < 18; h++) {
+      var pts = sixesFromStableford(state.stb[h]);
+      byHole.push(pts);
+      if (pts[0] != null) {
+        played++;
+        for (var i = 0; i < 3; i++) {
+          sixes[i] += pts[i];
+          if (h < 9) front[i] += pts[i]; else back[i] += pts[i];
+        }
+      }
+      for (var j = 0; j < 3; j++) {
+        if (state.stb[h][j] != null) stab[j] += state.stb[h][j];
+      }
+    }
+    return { sixes: sixes, stab: stab, front: front, back: back, byHole: byHole, played: played };
+  }
+
+  function displayName(i) {
+    return state.names[i] && state.names[i].trim() ? state.names[i] : "Player " + (i + 1);
+  }
+
+  // ---------- render: black stat bar ----------
+  function renderTopbar() {
+    var t = computeTotals();
+    document.getElementById("playedVal").textContent = t.played;
+    document.getElementById("holeVal").textContent = state.hole + 1;
+    var max = Math.max(t.sixes[0], t.sixes[1], t.sixes[2]);
+    var leaderEl = document.getElementById("leaderVal");
+    if (t.played === 0 || max === 0) {
+      leaderEl.textContent = "–";
+    } else {
+      var leaders = [];
+      for (var i = 0; i < 3; i++) if (t.sixes[i] === max) leaders.push(displayName(i));
+      leaderEl.textContent = leaders.length > 1 ? "Tied" : displayName(t.sixes.indexOf(max)).split(" ")[0].slice(0, 8);
+    }
+    document.getElementById("prevBtn").disabled = state.hole === 0;
+    document.getElementById("nextBtn").disabled = state.hole === 17;
+  }
+
+  // ---------- render: player cards ----------
+  function renderPlayers() {
+    var t = computeTotals();
+    var h = state.hole;
+    var pts = t.byHole[h];
+    var host = document.getElementById("playerCards");
+    host.innerHTML = "";
+
+    for (var i = 0; i < 3; i++) {
+      (function (i) {
+        var card = document.createElement("div");
+        card.className = "pcard";
+
+        // blue banner with editable name
+        var banner = document.createElement("div");
+        banner.className = "pbanner";
+        var nameInput = document.createElement("input");
+        nameInput.value = state.names[i];
+        nameInput.placeholder = "Player " + (i + 1);
+        nameInput.setAttribute("aria-label", "Player " + (i + 1) + " name");
+        nameInput.addEventListener("input", function () {
+          state.names[i] = nameInput.value;
+          save();
+          renderTopbar();
+          renderStandings();
+          renderCardTable();
+        });
+        banner.appendChild(nameInput);
+        card.appendChild(banner);
+
+        // body: big stepper
+        var body = document.createElement("div");
+        body.className = "pbody";
+
+        var stepper = document.createElement("div");
+        stepper.className = "stepper";
+
+        var minus = document.createElement("button");
+        minus.className = "big-btn";
+        minus.textContent = "−";
+        minus.setAttribute("aria-label", "Decrease " + displayName(i) + " Stableford points");
+        minus.addEventListener("click", function () { bump(i, -1); });
+
+        var s = state.stb[h][i];
+        var numWrap = document.createElement("div");
+        numWrap.className = "big-num-wrap";
+        var num = document.createElement("div");
+        num.className = "big-num" + (s == null ? " empty" : "");
+        num.textContent = s == null ? "–" : s;
+        var cap = document.createElement("div");
+        cap.className = "big-cap";
+        cap.textContent = "stableford points";
+        numWrap.appendChild(num);
+        numWrap.appendChild(cap);
+
+        var plus = document.createElement("button");
+        plus.className = "big-btn";
+        plus.textContent = "+";
+        plus.setAttribute("aria-label", "Increase " + displayName(i) + " Stableford points");
+        plus.addEventListener("click", function () { bump(i, 1); });
+
+        stepper.appendChild(minus);
+        stepper.appendChild(numWrap);
+        stepper.appendChild(plus);
+        body.appendChild(stepper);
+
+        // bottom stat boxes: SIXES (this hole) / OUT / IN / TOTAL
+        var row = document.createElement("div");
+        row.className = "statrow";
+
+        function statbox(capText, valText, cls) {
+          var sb = document.createElement("div");
+          sb.className = "statbox";
+          var c = document.createElement("div");
+          c.className = "cap";
+          c.textContent = capText;
+          var b = document.createElement("div");
+          b.className = "box" + (cls ? " " + cls : "");
+          b.textContent = valText;
+          sb.appendChild(c);
+          sb.appendChild(b);
+          return sb;
+        }
+
+        var holeSix = pts[i];
+        row.appendChild(statbox("Sixes", holeSix == null ? "–" : holeSix, holeSix == null ? "dim" : "filled"));
+        row.appendChild(statbox("Out", t.front[i], ""));
+        row.appendChild(statbox("In", t.back[i], ""));
+        row.appendChild(statbox("Total", t.sixes[i], ""));
+
+        body.appendChild(row);
+        card.appendChild(body);
+        host.appendChild(card);
+      })(i);
+    }
+
+    // status line
+    var status = document.getElementById("holeStatus");
+    if (pts[0] != null) {
+      status.className = "status-ok";
+      status.textContent = "6 points allocated ✓";
+    } else {
+      status.className = "status-wait";
+      status.textContent = "Enter all three to allocate the 6 points";
+    }
+  }
+
+  function bump(playerIdx, delta) {
+    var cur = state.stb[state.hole][playerIdx];
+    var val = cur == null ? 2 : cur + delta; // first tap = 2 (net par)
+    state.stb[state.hole][playerIdx] = Math.max(0, Math.min(8, val));
+    save();
+    renderTopbar();
+    renderPlayers();
+    renderStandings();
+    renderCardTable();
+  }
+
+  // ---------- render: standings ----------
+  var STAND_COLORS = ["#6b80d8", "#85a7c9", "#3a414a"];
+  function renderStandings() {
+    var t = computeTotals();
+
+    var bar = document.getElementById("bar");
+    var anyPts = t.sixes[0] + t.sixes[1] + t.sixes[2] > 0;
+    if (t.played > 0 && anyPts) {
+      bar.style.display = "flex";
+      bar.innerHTML = "";
+      t.sixes.forEach(function (p, i) {
+        var seg = document.createElement("div");
+        seg.style.width = (p / (t.played * 6) * 100) + "%";
+        seg.style.background = STAND_COLORS[i];
+        bar.appendChild(seg);
+      });
+    } else {
+      bar.style.display = "none";
+    }
+
+    var leader = Math.max(t.sixes[0], t.sixes[1], t.sixes[2]);
+    var grid = document.getElementById("standGrid");
+    grid.innerHTML = "";
+    for (var i = 0; i < 3; i++) {
+      var cell = document.createElement("div");
+      var isLeader = t.played > 0 && leader > 0 && t.sixes[i] === leader;
+      cell.className = "stand-cell" + (isLeader ? " leader" : "");
+      var nm = document.createElement("div");
+      nm.className = "stand-name";
+      nm.textContent = displayName(i);
+      var pts = document.createElement("div");
+      pts.className = "stand-pts";
+      pts.textContent = t.sixes[i];
+      var sub = document.createElement("div");
+      sub.className = "stand-sub";
+      sub.textContent = t.stab[i] + " stb";
+      cell.appendChild(nm); cell.appendChild(pts); cell.appendChild(sub);
+      grid.appendChild(cell);
+    }
+  }
+
+  // ---------- render: scorecard table ----------
+  function holeWinner(pts) {
+    if (pts[0] == null) return null;
+    var max = Math.max(pts[0], pts[1], pts[2]);
+    var winners = [];
+    for (var i = 0; i < 3; i++) if (pts[i] === max) winners.push(i);
+    if (winners.length > 1) return "Even";
+    return displayName(winners[0]).split(" ")[0].slice(0, 8);
+  }
+
+  function renderCardTable() {
+    var t = computeTotals();
+    var head = document.getElementById("cardHead");
+    head.innerHTML = "";
+    var th0 = document.createElement("th");
+    th0.className = "hole-col";
+    th0.textContent = "Hole";
+    head.appendChild(th0);
+    var thW = document.createElement("th");
+    thW.className = "hole-col";
+    thW.textContent = "Winner";
+    head.appendChild(thW);
+    for (var i = 0; i < 3; i++) {
+      var th = document.createElement("th");
+      th.textContent = displayName(i).slice(0, 8);
+      head.appendChild(th);
+    }
+
+    var body = document.getElementById("cardBody");
+    body.innerHTML = "";
+
+    function subtotalRow(label, arr, cls) {
+      var tr = document.createElement("tr");
+      tr.className = cls;
+      var td0 = document.createElement("td");
+      td0.className = "hole-col";
+      td0.colSpan = 2;
+      td0.textContent = label;
+      tr.appendChild(td0);
+      arr.forEach(function (p) {
+        var td = document.createElement("td");
+        td.textContent = p;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+
+    for (var h = 0; h < 18; h++) {
+      (function (h) {
+        var tr = document.createElement("tr");
+        tr.className = "hole-row" + (h === state.hole ? " current" : "");
+        tr.addEventListener("click", function () {
+          state.hole = h;
+          save();
+          renderTopbar();
+          renderPlayers();
+          renderCardTable();
+        });
+        var td0 = document.createElement("td");
+        td0.className = "hole-col";
+        td0.textContent = h + 1;
+        tr.appendChild(td0);
+        var pts = t.byHole[h];
+        var tdW = document.createElement("td");
+        tdW.className = "hole-col";
+        var w = holeWinner(pts);
+        if (w == null) {
+          tdW.innerHTML = '<span class="empty-mark">·</span>';
+        } else if (w === "Even") {
+          tdW.textContent = "Even";
+          tdW.style.color = "var(--muted)";
+        } else {
+          tdW.textContent = w;
+        }
+        tr.appendChild(tdW);
+        for (var i = 0; i < 3; i++) {
+          var td = document.createElement("td");
+          var s = state.stb[h][i];
+          if (s == null) {
+            td.innerHTML = '<span class="empty-mark">·</span>';
+          } else {
+            var span = document.createElement("span");
+            span.textContent = s + " ";
+            var b = document.createElement("b");
+            b.textContent = "(" + pts[i] + ")";
+            td.appendChild(span);
+            td.appendChild(b);
+          }
+          tr.appendChild(td);
+        }
+        body.appendChild(tr);
+        if (h === 8) subtotalRow("Out", t.front, "subtotal");
+        if (h === 17) {
+          subtotalRow("In", t.back, "subtotal");
+          subtotalRow("Sixes", t.sixes, "grand");
+        }
+      })(h);
+    }
+  }
+
+  // ---------- reset ----------
+  function renderReset() {
+    var area = document.getElementById("resetArea");
+    area.innerHTML = "";
+    if (confirmingReset) {
+      var yes = document.createElement("button");
+      yes.className = "reset-btn reset-confirm";
+      yes.textContent = "Confirm reset";
+      yes.addEventListener("click", function () {
+        state = freshState();
+        confirmingReset = false;
+        save();
+        renderAll();
+      });
+      var no = document.createElement("button");
+      no.className = "reset-btn";
+      no.style.marginLeft = "8px";
+      no.textContent = "Keep round";
+      no.addEventListener("click", function () {
+        confirmingReset = false;
+        renderReset();
+      });
+      area.appendChild(yes);
+      area.appendChild(no);
+    } else {
+      var btn = document.createElement("button");
+      btn.className = "reset-btn";
+      btn.textContent = "New round";
+      btn.addEventListener("click", function () {
+        confirmingReset = true;
+        renderReset();
+      });
+      area.appendChild(btn);
+    }
+  }
+
+  document.getElementById("prevBtn").addEventListener("click", function () {
+    if (state.hole > 0) { state.hole--; save(); renderTopbar(); renderPlayers(); renderCardTable(); }
+  });
+  document.getElementById("nextBtn").addEventListener("click", function () {
+    if (state.hole < 17) { state.hole++; save(); renderTopbar(); renderPlayers(); renderCardTable(); }
+  });
+  document.getElementById("clearHoleBtn").addEventListener("click", function () {
+    state.stb[state.hole] = [null, null, null];
+    save();
+    renderTopbar(); renderPlayers(); renderStandings(); renderCardTable();
+  });
+
+  function renderAll() {
+    renderTopbar();
+    renderPlayers();
+    renderStandings();
+    renderCardTable();
+    renderReset();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
